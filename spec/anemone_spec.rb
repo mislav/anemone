@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe Anemone do
+  
+  before(:all) do
+    Anemone::FakePage.new
+  end
 
   it "should have a version" do
     Anemone.const_defined?('VERSION').should == true
