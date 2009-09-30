@@ -20,7 +20,7 @@ describe Anemone do
     Anemone.options.verbose.should == false
     Anemone.options.threads.should == 2
     Anemone.options.discard_page_bodies.should == true
-    Anemone.options.delay.should == 0
+    Anemone.options.delay.should == false
     Anemone.options.user_agent.should == 'test'
     Anemone.options.obey_robots_txt.should == true
     Anemone.options.depth_limit.should == 3

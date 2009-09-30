@@ -29,7 +29,7 @@ module Anemone
         
         @page_queue.enq(page)
 
-        sleep Anemone.options.delay
+        sleep(Anemone.options.delay || 0)
       end
     end
     
