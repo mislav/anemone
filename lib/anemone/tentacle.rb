@@ -17,18 +17,12 @@ module Anemone
     #
     def run
       while true do
-        link, from_page = @link_queue.deq
-        
+        link, parent_page = @link_queue.deq
         break if link == :END
         
-        if from_page
-          page = Page.fetch(link, from_page)
-        else
-          page = Page.fetch(link)
-        end
-        
+        page = (parent_page || Page).fetch(link)
         @page_queue.enq(page)
-
+        
         sleep(Anemone.options.delay || 0)
       end
     end
