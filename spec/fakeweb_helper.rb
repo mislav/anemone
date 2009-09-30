@@ -8,22 +8,17 @@ end
 FakeWeb.allow_net_connect = false
 
 module Anemone
-  SPEC_DOMAIN = "http://www.example.com/"
-  
   class FakePage
-    attr_accessor :links
-    attr_accessor :hrefs
-    attr_accessor :body
+    attr_reader :name, :links, :hrefs, :redirect, :content_type
     
     def initialize(name = '', options = {})
       @name = name
-      @links = [options[:links]].flatten if options.has_key?(:links)
-      @hrefs = [options[:hrefs]].flatten if options.has_key?(:hrefs)
-      @redirect = options[:redirect] if options.has_key?(:redirect)
+      @links = Array(options[:links])
+      @hrefs = Array(options[:hrefs])
+      @redirect = options[:redirect]
       @content_type = options[:content_type] || "text/html"
       @body = options[:body]
       
-      create_body unless @body
       add_to_fakeweb
     end
     
@@ -31,28 +26,29 @@ module Anemone
       SPEC_DOMAIN + @name
     end
     
-    private
-    
-    def create_body
-      @body = "<html><body>"
-      @links.each{|l| @body += "<a href=\"#{SPEC_DOMAIN}#{l}\"></a>"} if @links
-      @hrefs.each{|h| @body += "<a href=\"#{h}\"></a>"} if @hrefs
-      @body += "</body></html>"
+    def body
+      @body ||= begin
+        "<html><body>" +
+        links.map { |link| %(<a href="#{SPEC_DOMAIN}#{link}"></a>) }.join("\n") +
+        hrefs.each { |href| %(<a href="#{href}"></a>) }.join("\n") +
+        "</body></html>"
+      end
     end
     
+    private
+    
     def add_to_fakeweb
-      options = {:body => @body, :content_type => @content_type, :status => [200, "OK"]}
+      headers = {'Content-type' => content_type}
+      headers['Location'] = SPEC_DOMAIN + redirect if redirect
       
-      if @redirect
-        options[:status] = [301, "Permanently Moved"] 
-        options[:location] = SPEC_DOMAIN + @redirect
-      end
-
-      FakeWeb.register_uri(:get, SPEC_DOMAIN + @name, options)
+      response_body = 'HTTP/1.1 '
+      response_body << (redirect ? '301 Permanently Moved' : '200 OK') << "\r\n"
+      response_body << headers.map { |k,v| "#{k}: #{v}" }.join("\r\n")
+      response_body << "\r\n\r\n" << body
+      
+      options = {:response => response_body}
+      
+      FakeWeb.register_uri(:get, SPEC_DOMAIN + name, options)
     end
   end
 end
-
-#default root
-Anemone::FakePage.new
-
