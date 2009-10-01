@@ -145,39 +145,78 @@ module Anemone
       urls.should include(pages[0].url)
       urls.should_not include(pages[1].url)
     end
-    
-    describe "many pages" do
-      before(:each) do
-        @pages, size = [], 5
+  end
+  
+  describe Core, "many pages" do
+    before(:all) do
+      FakeWeb.clean_registry
+      
+      @pages, size = [], 5
+      
+      size.times do |n|
+        # register this page with a link to the next page
+        link = (n + 1).to_s if n + 1 < size
+        @pages << FakePage.new(n.to_s, :links => Array(link))
+      end    
+    end
+  
+    it "should track the page depth and referer" do
+      core = Anemone.crawl(@pages[0].url) 
+      previous_page = nil
+      
+      @pages.each_with_index do |page, i|
+        page = core.pages[page.url]
+        page.should be
+        page.depth.should == i
         
-        size.times do |n|
-          # register this page with a link to the next page
-          link = (n + 1).to_s if n + 1 < size
-          @pages << FakePage.new(n.to_s, :links => Array(link))
-        end    
-      end
-    
-      it "should track the page depth and referer" do
-        core = Anemone.crawl(@pages[0].url) 
-        previous_page = nil
-        
-        @pages.each_with_index do |page, i|
-          page = core.pages[page.url]
-          page.should be
-          page.depth.should == i
-          
-          if previous_page
-            page.referer.should == previous_page.url
-          else
-            page.referer.should be_nil
-          end
-          previous_page = page
+        if previous_page
+          page.referer.should == previous_page.url
+        else
+          page.referer.should be_nil
         end
+        previous_page = page
       end
+    end
+  
+    it "should optionally limit the depth of the crawl" do
+      core = Anemone.crawl(@pages[0].url, :depth_limit => 3) 
+      core.should have(4).pages
+    end
+  end
+  
+  describe Core, "link selection" do
+    before(:all) do
+      @core = described_class.new(SPEC_DOMAIN)
+      @core.skip_links_like %r{^/will/skip}
+      @core.pages[SPEC_DOMAIN + 'bar'] = nil # mark as "visited"
+    end
     
-      it "should optionally limit the depth of the crawl" do
-        core = Anemone.crawl(@pages[0].url, :depth_limit => 3) 
-        core.should have(4).pages
+    def links_to_follow(page)
+      @core.send(:links_to_follow, page)
+    end
+    
+    it "should skip links and remove duplicates" do
+      links = %[
+        #{SPEC_DOMAIN}foo
+        #{SPEC_DOMAIN}bar
+        #{SPEC_DOMAIN}will/skip/this/link
+        #{SPEC_DOMAIN}foo
+        http://other.com/foo
+      ].split.map{ |link| URI(link) }
+        
+      page = stub(:depth => 1, :links => links)
+        
+      links_to_follow(page).should == [links[0], links[4]]
+    end
+    
+    it "should not try to analyze links deeper than depth limit" do
+      Anemone.options.depth_limit = 1
+      begin
+        page = stub(:depth => 1)
+        page.should_not_receive(:links)
+        links_to_follow(page).should == []
+      ensure
+        Anemone.options.depth_limit = false
       end
     end
   end
