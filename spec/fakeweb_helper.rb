@@ -29,8 +29,8 @@ module Anemone
     def body
       @body ||= begin
         "<html><body>" +
-        links.map { |link| %(<a href="#{SPEC_DOMAIN}#{link}"></a>) }.join("\n") +
-        hrefs.each { |href| %(<a href="#{href}"></a>) }.join("\n") +
+        links.map { |link| %(<a href="#{SPEC_DOMAIN}#{link}">link</a>) }.join("\n") +
+        hrefs.map { |href| %(<a href="#{href}">href</a>) }.join("\n") +
         "</body></html>"
       end
     end

@@ -72,9 +72,11 @@ module Anemone
           # get a list of distinct links on the page, in absolute url form
           links = doc.css('a[href]').inject([]) do |list, link|
             href = link.attributes['href'].content
-            unless href.nil? or href.empty?
+            unless skip_link?(href)
               url = to_absolute(href)
-              list << url if in_domain?(url)
+              if url.scheme =~ /^https?$/ and same_host?(url)
+                list << url
+              end
             end
             list
           end
@@ -162,7 +164,7 @@ module Anemone
     # location of the page
     #
     def to_absolute(link)
-      # remove anchor
+      # remove fragment
       link = link.split('#').first if link.index('#')
       url = URI(URI.encode(link))
       url = @url.merge(url) if url.relative?
@@ -174,8 +176,17 @@ module Anemone
     # Returns +true+ if *uri* is in the same domain as the page, returns
     # +false+ otherwise
     #
-    def in_domain?(uri)
+    def same_host?(uri)
       uri.host == @url.host
+    end
+    
+    #
+    # Skip empty links, those who begin with a fragment or any other
+    # that begin with a word+colon that's not part of the URI scheme
+    # (mailto, javascript, tel, sms, ...)
+    #
+    def skip_link?(link)
+      link.nil? or link.empty? or link =~ %r{^(#|[a-z]+:(?!//))}
     end
   end
 end

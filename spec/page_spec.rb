@@ -4,7 +4,21 @@ module Anemone
   describe Page do
     
     before(:all) do
-      @url = FakePage.new('home').url
+      @url = FakePage.new('home',
+        :hrefs => %w[
+          foo
+          /foo/bar
+          /foo/bar#baz
+          #baz
+          #
+          foo\ bar
+          mailto:mislav@example.com
+          javascript:void()
+          ftp://user:password@example.com/
+          tel:1-408-555-5555
+          sms:1-408-555-1212
+          ]
+      ).url
     end
     
     before(:each) do
@@ -62,8 +76,16 @@ module Anemone
     end
     
     it "should have a method to tell if a URI is in the same domain as the page" do
-      @page.should be_in_domain(URI(FakePage.new('test').url))
-      @page.should_not be_in_domain(URI('http://www.other.com/'))
+      @page.should be_same_host(URI(FakePage.new('test').url))
+      @page.should_not be_same_host(URI('http://www.other.com/'))
+    end
+    
+    it "should parse links" do
+      @page.links.should == [
+        URI(SPEC_DOMAIN + 'foo'),
+        URI(SPEC_DOMAIN + 'foo/bar'),
+        URI(SPEC_DOMAIN + 'foo%20bar')
+        ]
     end
     
   end
