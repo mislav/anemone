@@ -5,6 +5,11 @@ describe Anemone do
   before(:all) do
     Anemone::FakePage.new
   end
+  
+  after(:each) do
+    # reset global options object to defaults
+    Anemone::DEFAULTS.each { |key, value| Anemone.options.send("#{key}=", value) }
+  end
 
   it "should have a version" do
     Anemone.const_defined?('VERSION').should == true
@@ -21,6 +26,7 @@ describe Anemone do
                                :user_agent => 'test',
                                :obey_robots_txt => true,
                                :depth_limit => 3)
+
     Anemone.options.verbose.should == false
     Anemone.options.threads.should == 2
     Anemone.options.discard_page_bodies.should == true

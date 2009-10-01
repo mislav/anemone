@@ -4,26 +4,29 @@ require 'anemone/core'
 module Anemone
   # Version number
   VERSION = '0.2.0'
+  
+  # default options
+  DEFAULTS = {
+    # run 4 Tentacle threads to fetch pages
+    :threads => 4,
+    # disable verbose output
+    :verbose => false,
+    # don't throw away the page response body after scanning it for links
+    :discard_page_bodies => false,
+    # identify self as Anemone/VERSION
+    :user_agent => "Anemone/#{VERSION}",
+    # no delay between requests
+    :delay => false,
+    # don't obey the robots exclusion protocol
+    :obey_robots_txt => false,
+    # by default, don't limit the depth of the crawl
+    :depth_limit => false,
+    # number of times HTTP redirects will be followed
+    :redirect_limit => 5
+  }
 
   def self.options
-    @options ||= OpenStruct.new(
-      # run 4 Tentacle threads to fetch pages
-      :threads => 4,
-      # disable verbose output
-      :verbose => false,
-      # don't throw away the page response body after scanning it for links
-      :discard_page_bodies => false,
-      # identify self as Anemone/VERSION
-      :user_agent => "Anemone/#{VERSION}",
-      # no delay between requests
-      :delay => false,
-      # don't obey the robots exclusion protocol
-      :obey_robots_txt => false,
-      # by default, don't limit the depth of the crawl
-      :depth_limit => false,
-      # number of times HTTP redirects will be followed
-      :redirect_limit => 5
-    )
+    @options ||= OpenStruct.new(DEFAULTS)
   end
   
   #
