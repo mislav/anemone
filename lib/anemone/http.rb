@@ -32,9 +32,7 @@ module Anemone
     #
     def self.get_response(url, headers = {})
       Net::HTTP.start(url.host, url.port) do |http|
-        path = url.path
-        path << '?' << url.query if url.query
-        http.get(path, headers)
+        http.get(url.path_with_query, headers)
       end
     end
   end

@@ -67,7 +67,7 @@ module Anemone
         page_added = page.aliases.inject(false) { |r, a| r ||= results.has_key? a}
         if !page.redirect? and !page_added
           results[url] = page.clone 
-          results[url].aliases = []
+          results[url].aliases.clear
         end
       end
       

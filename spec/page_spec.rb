@@ -88,5 +88,12 @@ module Anemone
         ]
     end
     
+    it "should include query string when fetching" do
+      url = URI(FakePage.new('foo?bar=baz').url)
+      page = Page.fetch(url)
+      page.url.should == url
+      page.url.path_with_query.should == '/foo?bar=baz'
+    end
+    
   end
 end

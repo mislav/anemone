@@ -1,4 +1,4 @@
-require 'net/http'
+require 'uri'
 require 'thread'
 require 'anemone/tentacle'
 require 'anemone/page_hash'
@@ -13,8 +13,11 @@ module Anemone
     # and optional *block*
     #
     def initialize(urls, &block)
-      @urls = [urls].flatten.map{ |url| URI(url) if url.is_a?(String) }
-      @urls.each{ |url| url.path = '/' if url.path.empty? }
+      @urls = Array(urls).map do |url|
+        url = URI(url) if String === url
+        url.path = '/' if url.path.empty?
+        url
+      end
       
       @tentacles = []
       @pages = PageHash.new
@@ -22,6 +25,7 @@ module Anemone
       @on_pages_like_blocks = Hash.new { |hash,key| hash[key] = [] }
       @skip_link_patterns = []
       @after_crawl_blocks = []
+      @focus_crawl_block = nil
       
       if Anemone.options.obey_robots_txt
         @robots = Robots.new(Anemone.options.user_agent)
@@ -216,5 +220,11 @@ module Anemone
       return false
     end
     
+  end
+end
+
+URI::Generic.class_eval do
+  def path_with_query
+    self.path + (self.query ? '?' + self.query : '')
   end
 end

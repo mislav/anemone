@@ -32,7 +32,7 @@ Anemone.crawl(root, :discard_page_bodies => true) do |anemone|
   
   anemone.on_every_page do |page|
     if options.relative
-      puts page.url.path
+      puts page.url.path_with_query
     else
       puts page.url
     end
