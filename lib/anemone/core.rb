@@ -130,10 +130,7 @@ module Anemone
         # create an entry in the page hash for each alias of this page,
         # i.e. all the pages that redirected to this page
         page.aliases.each do |aka|
-          if !@pages.has_key?(aka) or @pages[aka].nil?
-            @pages[aka] = page.alias_clone(aka)
-          end
-          @pages[aka].add_alias!(page.url)
+          @pages[aka] ||= page.alias_clone(aka)
         end
         
         # if we are done with the crawl, tell the threads to end

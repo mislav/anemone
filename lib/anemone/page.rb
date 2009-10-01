@@ -6,16 +6,16 @@ module Anemone
   class Page
 
     # The URL of the page
-    attr_reader :url
+    attr_accessor :url
     # Headers of the HTTP response
     attr_reader :headers
     
     # OpenStruct for user-stored data
-    attr_accessor :data
+    attr_reader :data
     # Integer response code of the page
-    attr_accessor :code	
+    attr_accessor :code
     # Array of redirect-aliases for the page
-    attr_accessor :aliases
+    attr_reader :aliases
     # Boolean indicating whether or not this page has been visited in PageHash#shortest_paths!
     attr_accessor :visited
     # Depth of this page from the root of the crawl. This is not necessarily the
@@ -95,12 +95,14 @@ module Anemone
     #
     # Return a new page with the same *response* and *url*, but
     # with a 200 response code
-    #    
-    def alias_clone(url)
-      p = clone
-	  p.add_alias!(@aka) if !@aka.nil?
-	  p.code = 200
-	  p
+    #
+    def alias_clone(aka)
+      page = clone
+      page.aliases.delete(aka)
+      page.add_alias(page.url)
+      page.url = aka
+      page.code = 200
+      page
     end
 
     #
@@ -108,9 +110,8 @@ module Anemone
     #
     # Returns *self*
     #
-    def add_alias!(aka)
-      @aliases << aka if !@aliases.include?(aka)
-      self
+    def add_alias(aka)
+      aliases << aka unless aliases.include?(aka)
     end
     
     #
