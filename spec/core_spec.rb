@@ -14,7 +14,8 @@ module Anemone
       pages << FakePage.new('2')
       pages << FakePage.new('3')
       
-      Anemone.crawl(pages[0].url).should have(4).pages
+      core = Anemone.crawl(pages[0].url)
+      core.should have(4).pages
     end
     
     it "should not leave the original domain" do
@@ -88,12 +89,18 @@ module Anemone
     end
     
     it "should not discard page bodies by default" do
-      Anemone.crawl(FakePage.new('0').url).pages.values.first.doc.should_not be_nil
+      core = Anemone.crawl(FakePage.new('0').url)
+      page = core.pages.values.first
+      page.doc.should_not be_nil
     end
     
     it "should optionally discard page bodies to conserve memory" do
-      core = Anemone.crawl(FakePage.new('0').url, :discard_page_bodies => true)
-      core.pages.values.first.doc.should be_nil
+      begin
+        core = Anemone.crawl(FakePage.new('0').url, :discard_page_bodies => true)
+        core.pages.values.first.doc.should be_nil
+      ensure
+        Anemone.options.discard_page_bodies = false
+      end
     end
     
     it "should provide a focus_crawl method to select the links on each page to follow" do

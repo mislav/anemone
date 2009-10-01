@@ -1,10 +1,14 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require 'spec_helper'
 
 module Anemone
   describe Page do
     
+    before(:all) do
+      @url = FakePage.new('home').url
+    end
+    
     before(:each) do
-      @page = Page.fetch(FakePage.new('home').url)
+      @page = Page.fetch(@url)
     end
     
     it "should be able to fetch a page" do
