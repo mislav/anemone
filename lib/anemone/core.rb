@@ -5,6 +5,11 @@ require 'anemone/page_hash'
 
 module Anemone
   class Core
+    attr_reader :options
+    
+    # queues used to distribute work between Tentacles
+    attr_reader :link_queue, :page_queue
+    
     # PageHash storing all Page objects encountered during the crawl
     attr_reader :pages
 
@@ -12,13 +17,14 @@ module Anemone
     # Initialize the crawl with starting *urls* (single URL or Array of URLs)
     # and optional *block*
     #
-    def initialize(urls)
+    def initialize(urls, options)
       @urls = Array(urls).map do |url|
         url = URI(url) if String === url
         url.path = '/' if url.path.empty?
         url
       end
 
+      @options = options.dup
       @tentacles = []
       @pages = PageHash.new
       @on_every_page_blocks = []
@@ -27,11 +33,7 @@ module Anemone
       @after_crawl_blocks = []
       @focus_crawl_block = nil
 
-      if Anemone.options.obey_robots_txt
-        @robots = Robots.new(Anemone.options.user_agent)
-      else
-        @robots = nil
-      end
+      @options[:http] ||= HTTP.new(@options)
 
       yield self if block_given?
     end
@@ -39,8 +41,8 @@ module Anemone
     #
     # Convenience method to start a new crawl
     #
-    def self.crawl(root)
-      self.new(root) do |core|
+    def self.crawl(urls, options)
+      self.new(urls, options) do |core|
         yield core if block_given?
         core.run
       end
@@ -100,11 +102,11 @@ module Anemone
       @urls.delete_if { |url| !visit_link?(url) }
       return if @urls.empty?
 
-      link_queue = Queue.new
-      page_queue = Queue.new
+      @link_queue = Queue.new
+      @page_queue = Queue.new
 
-      Anemone.options.threads.times do |id|
-        @tentacles << Thread.new { Tentacle.new(link_queue, page_queue).run }
+      options[:threads].times do |id|
+        @tentacles << Thread.new { Tentacle.new(self).run }
       end
 
       @urls.each{ |url| link_queue.enq(url) }
@@ -114,12 +116,12 @@ module Anemone
 
         @pages[page.url] = page
 
-        puts "#{page.url} Queue: #{link_queue.size}" if Anemone.options.verbose
+        puts "#{page.url} Queue: #{link_queue.size}" if options[:verbose]
 
         # perform the on_every_page blocks for this page
         do_page_blocks(page)
 
-        page.discard_document! if Anemone.options.discard_page_bodies
+        page.discard_document! if options[:discard_page_bodies]
 
         links_to_follow(page).each do |link|
           link_queue.enq([link, page])
@@ -148,6 +150,7 @@ module Anemone
 
       @tentacles.each { |t| t.join }
 
+      options[:http].close_connections!
       do_after_crawl_blocks
 
       self
@@ -181,7 +184,7 @@ module Anemone
     # and the block given to #focus_crawl
     #
     def links_to_follow(page)
-      unless Anemone.options.depth_limit and page.depth >= Anemone.options.depth_limit
+      unless options[:depth_limit] and page.depth >= options[:depth_limit]
         links = @focus_crawl_block ? @focus_crawl_block.call(page) : page.links
         links.select { |link| visit_link?(link) }.uniq
       else
@@ -196,8 +199,7 @@ module Anemone
     # Returns +false+ otherwise.
     #
     def visit_link?(link)
-      not @pages.has_key?(link) and not skip_link?(link) and
-        (not @robots or @robots.allowed?(link))
+      not @pages.has_key?(link) and not skip_link?(link) and options[:http].allowed?(link)
     end
 
     #

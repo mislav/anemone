@@ -1,4 +1,3 @@
-require 'ostruct'
 require 'anemone/core'
 
 module Anemone
@@ -25,17 +24,13 @@ module Anemone
     :redirect_limit => 5
   }
 
-  def self.options
-    @options ||= OpenStruct.new(DEFAULTS)
-  end
-  
   #
   # Convenience method to start a crawl using Core
   #
   def self.crawl(urls, options = {}, &block)
-    options.each { |key, value| Anemone.options.send("#{key}=", value) }
+    options = DEFAULTS.merge options
     
-    if Anemone.options.obey_robots_txt
+    if options[:obey_robots_txt]
       begin
         require 'robots'
       rescue LoadError
@@ -46,8 +41,8 @@ module Anemone
     end
     
     # use a single thread if a delay was requested
-    Anemone.options.threads = 1 if Anemone.options.delay
+    options[:threads] = 1 if options[:delay]
     
-    Core.crawl(urls, &block)
+    Core.crawl(urls, options, &block)
   end
 end

@@ -27,7 +27,7 @@ module Anemone
     #
     # Create a new Page from the response of an HTTP request to *url*
     #
-    def self.fetch(url, parent_page = nil)
+    def self.fetch(url, options, parent_page = nil)
       url = URI(url) unless URI === url
 
       if parent_page
@@ -35,14 +35,14 @@ module Anemone
         depth = parent_page.depth + 1
       end
 
-      response, code, final_url = Anemone::HTTP.get(url, referer)
+      response, code, final_url = options[:http].get(url, referer)
       aka = final_url == url ? nil : final_url
 
       new(url, response.body.dup, code, response.to_hash, aka, referer, depth)
     end
     
-    def fetch(url)
-      self.class.fetch(url, self)
+    def fetch(url, options)
+      self.class.fetch(url, options, self)
     end
     
     #

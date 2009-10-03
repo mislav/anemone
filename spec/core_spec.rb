@@ -95,12 +95,8 @@ module Anemone
     end
     
     it "should optionally discard page bodies to conserve memory" do
-      begin
-        core = Anemone.crawl(FakePage.new('0').url, :discard_page_bodies => true)
-        core.pages.values.first.doc.should be_nil
-      ensure
-        Anemone.options.discard_page_bodies = false
-      end
+      core = Anemone.crawl(FakePage.new('0').url, :discard_page_bodies => true)
+      core.pages.values.first.doc.should be_nil
     end
     
     it "should provide a focus_crawl method to select the links on each page to follow" do
@@ -185,10 +181,8 @@ module Anemone
   end
   
   describe Core, "link selection" do
-    before(:all) do
-      @core = described_class.new(SPEC_DOMAIN)
-      @core.skip_links_like %r{^/will/skip}
-      @core.pages[SPEC_DOMAIN + 'bar'] = nil # mark as "visited"
+    before(:each) do
+      @core = described_class.new(SPEC_DOMAIN, Anemone::DEFAULTS)
     end
     
     def links_to_follow(page)
@@ -196,6 +190,9 @@ module Anemone
     end
     
     it "should skip links and remove duplicates" do
+      @core.skip_links_like %r{^/will/skip}
+      @core.pages[SPEC_DOMAIN + 'bar'] = nil # mark as "visited"
+      
       links = %[
         #{SPEC_DOMAIN}foo
         #{SPEC_DOMAIN}bar
@@ -210,14 +207,10 @@ module Anemone
     end
     
     it "should not try to analyze links deeper than depth limit" do
-      Anemone.options.depth_limit = 1
-      begin
-        page = stub(:depth => 1)
-        page.should_not_receive(:links)
-        links_to_follow(page).should == []
-      ensure
-        Anemone.options.depth_limit = false
-      end
+      @core.options[:depth_limit] = 1
+      page = stub(:depth => 1)
+      page.should_not_receive(:links)
+      links_to_follow(page).should == []
     end
   end
 end

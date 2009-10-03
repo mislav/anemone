@@ -2,13 +2,15 @@ require 'anemone/page'
 
 module Anemone
   class Tentacle
-    
     #
     # Create a new Tentacle
     #
-    def initialize(link_queue, page_queue)
-      @link_queue = link_queue
-      @page_queue = page_queue
+    def initialize(body)
+      @body = body
+    end
+    
+    def delay
+      @delay ||= @body.options[:delay] || 0
     end
     
     #
@@ -17,15 +19,27 @@ module Anemone
     #
     def run
       while true do
-        link, parent_page = @link_queue.deq
+        link, parent_page = get_payload
         break if link == :END
         
-        page = (parent_page || Page).fetch(link)
-        @page_queue.enq(page)
-        
-        sleep(Anemone.options.delay || 0)
+        fetch link, parent_page
+        sleep delay
       end
     end
     
+    protected
+    
+    def get_payload
+      @body.link_queue.deq
+    end
+    
+    def fetch(link, parent_page)
+      page = (parent_page || Page).fetch(link, @body.options)
+      enqueue page
+    end
+    
+    def enqueue(page)
+      @body.page_queue.enq(page)
+    end
   end
 end

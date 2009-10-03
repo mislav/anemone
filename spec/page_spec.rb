@@ -22,7 +22,9 @@ module Anemone
     end
     
     before(:each) do
-      @page = Page.fetch(@url)
+      @options = DEFAULTS.dup
+      @options[:http] = HTTP.new(@options)
+      @page = Page.fetch(@url, @options)
     end
     
     it "should be able to fetch a page" do
@@ -48,9 +50,9 @@ module Anemone
     end
     
     describe "redirect" do
-      before(:all) do
+      before(:each) do
         @redirect_url = FakePage.new('redir', :redirect => 'home').url
-        @redirect_page = Page.fetch(@redirect_url)
+        @redirect_page = Page.fetch(@redirect_url, @options)
       end
     
       it "should not indicate redirect for normal responses" do
@@ -90,7 +92,7 @@ module Anemone
     
     it "should include query string when fetching" do
       url = URI(FakePage.new('foo?bar=baz').url)
-      page = Page.fetch(url)
+      page = Page.fetch(url, @options)
       page.url.should == url
       page.url.path_with_query.should == '/foo?bar=baz'
     end
