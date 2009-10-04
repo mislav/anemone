@@ -77,11 +77,10 @@ module Anemone
             unless skip_link?(href)
               begin
                 url = to_absolute(href)
-                if url.scheme =~ /^https?$/ and same_host?(url)
-                  list << url
-                end
               rescue URI::InvalidURIError
                 $stderr.puts "ERROR: bad URI #{href.inspect} on page #{self.url.to_s.inspect}"
+              else
+                list << url if url.scheme =~ /^https?$/
               end
             end
             list

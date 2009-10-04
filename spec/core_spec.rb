@@ -48,6 +48,16 @@ module Anemone
       Anemone.crawl([pages[0].url, pages[2].url]).should have(4).pages
     end
     
+    it "should stay under given paths with :traverse_up set to false" do
+      pages = []
+      pages << FakePage.new('0', :links => ['01'])
+      pages << FakePage.new('01')
+      pages << FakePage.new('2', :links => ['3'])
+      pages << FakePage.new('3')
+      
+      Anemone.crawl([pages[0].url, pages[2].url], :traverse_up => false).should have(3).pages
+    end
+    
     it "should include the query string when following links" do
       pages = []
       pages << FakePage.new('0', :links => ['1?foo=1'])
@@ -202,6 +212,7 @@ module Anemone
       ].split.map{ |link| URI(link) }
         
       page = stub(:depth => 1, :links => links)
+      page.stub!(:same_host?).and_return(true)
         
       links_to_follow(page).should == [links[0], links[4]]
     end

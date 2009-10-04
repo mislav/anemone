@@ -99,7 +99,7 @@ module Anemone
     # Perform the crawl
     #
     def run
-      @urls.delete_if { |url| !visit_link?(url) }
+      @urls.delete_if { |url| skip_link?(url) }
       return if @urls.empty?
 
       @link_queue = Queue.new
@@ -109,7 +109,7 @@ module Anemone
         @tentacles << Thread.new { Tentacle.new(self).run }
       end
 
-      @urls.each{ |url| link_queue.enq(url) }
+      @urls.each { |url| link_queue.enq(url) }
 
       loop do
         page = page_queue.deq
@@ -185,7 +185,11 @@ module Anemone
     #
     def links_to_follow(page)
       unless options[:depth_limit] and page.depth >= options[:depth_limit]
-        links = @focus_crawl_block ? @focus_crawl_block.call(page) : page.links
+        links = if @focus_crawl_block
+          @focus_crawl_block.call(page)
+        else
+          page.links.select { |link| in_domain?(link, page) }
+        end
         links.select { |link| visit_link?(link) }.uniq
       else
         [] # depth limit reached; don't follow any links
@@ -199,15 +203,25 @@ module Anemone
     # Returns +false+ otherwise.
     #
     def visit_link?(link)
-      not @pages.has_key?(link) and not skip_link?(link) and options[:http].allowed?(link)
+      not @pages.has_key?(link) and not skip_link?(link)
+    end
+    
+    def in_domain?(link, page)
+      if options[:traverse_up]
+        page.same_host?(link)
+      else
+        @url_strings ||= @urls.map { |u| u.to_s }
+        @url_strings.any? { |url| link.to_s.index(url) == 0 }
+      end
     end
 
     #
     # Returns +true+ if *link* should not be visited because
-    # its URL matches a skip_link pattern.
+    # its URL matches a skip_link pattern or is disallowed by robots.txt.
     #
     def skip_link?(link)
-      @skip_link_patterns.any? { |p| link.path_with_query =~ p }
+      @skip_link_patterns.any? { |p| link.path_with_query =~ p } or
+        not options[:http].allowed?(link)
     end
 
   end
