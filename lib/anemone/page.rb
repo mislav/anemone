@@ -72,10 +72,16 @@ module Anemone
           # get a list of distinct links on the page, in absolute url form
           links = doc.css('a[href]').inject([]) do |list, link|
             href = link.attributes['href'].content
+            href.strip! if href
+            
             unless skip_link?(href)
-              url = to_absolute(href)
-              if url.scheme =~ /^https?$/ and same_host?(url)
-                list << url
+              begin
+                url = to_absolute(href)
+                if url.scheme =~ /^https?$/ and same_host?(url)
+                  list << url
+                end
+              rescue URI::InvalidURIError
+                $stderr.puts "ERROR: bad URI #{href.inspect} on page #{self.url.to_s.inspect}"
               end
             end
             list
@@ -167,6 +173,7 @@ module Anemone
       # remove fragment
       link = link.split('#').first if link.index('#')
       url = URI(URI.encode(link))
+      raise URI::InvalidURIError unless url.path
       url = @url.merge(url) if url.relative?
       url.path = '/' if url.path.empty?
       url
@@ -186,7 +193,7 @@ module Anemone
     # (mailto, javascript, tel, sms, ...)
     #
     def skip_link?(link)
-      link.nil? or link.empty? or link =~ %r{^(#|[a-z]+:(?!//))}
+      link.nil? or link.empty? or link =~ %r{^(#|[\w-]+:(?!//))}
     end
   end
 end

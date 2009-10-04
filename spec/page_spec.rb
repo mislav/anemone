@@ -15,6 +15,7 @@ module Anemone
           mailto:mislav@example.com
           javascript:void()
           ftp://user:password@example.com/
+          \ ftp://example.com
           tel:1-408-555-5555
           sms:1-408-555-1212
           ]
