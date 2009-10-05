@@ -24,6 +24,9 @@ module Anemone
     # URL of the page that brought us to this page
     attr_accessor :referer
     
+    # URLs ending in these file extensions will be skipped
+    SKIP_EXTENSIONS = %w(pdf mov flv mp3 mp4 ogg tgz tar gz zip rar dmg pdf jpg jpeg gif png psd doc docx xls)
+    
     #
     # Create a new Page from the response of an HTTP request to *url*
     #
@@ -192,7 +195,8 @@ module Anemone
     # (mailto, javascript, tel, sms, ...)
     #
     def skip_link?(link)
-      link.nil? or link.empty? or link =~ %r{^(#|[\w-]+:(?!//))}
+      link.nil? or link.empty? or link =~ %r{^(#|[\w-]+:(?!//))} or
+        (link =~ /\.(\w{2,4})([?#]|\Z)/ && SKIP_EXTENSIONS.include?($1.downcase))
     end
   end
 end

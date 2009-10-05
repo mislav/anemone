@@ -18,6 +18,8 @@ module Anemone
           \ ftp://example.com
           tel:1-408-555-5555
           sms:1-408-555-1212
+          foo.pdf
+          bar.png?width=200
           ]
       ).url
     end
