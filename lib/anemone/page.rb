@@ -190,7 +190,7 @@ module Anemone
     end
     
     #
-    # Skip empty links, those who begin with a fragment or any other
+    # Skip empty links, those which begin with a fragment or any other
     # that begin with a word+colon that's not part of the URI scheme
     # (mailto, javascript, tel, sms, ...)
     #
