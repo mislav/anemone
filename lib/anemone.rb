@@ -23,7 +23,11 @@ module Anemone
     # number of times HTTP redirects will be followed
     :redirect_limit => 5,
     # whether crawling is allowed to paths above ones given
-    :traverse_up => true
+    :traverse_up => true,
+    # array of additionally allowed URL prefixes or patterns
+    :allowed_urls => nil,
+    # array of URL prefixes or patterns that should not be followed
+    :skip_urls => nil
   }
 
   #

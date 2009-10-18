@@ -29,7 +29,7 @@ module Anemone
       @pages = PageHash.new
       @on_every_page_blocks = []
       @on_pages_like_blocks = Hash.new { |hash,key| hash[key] = [] }
-      @skip_link_patterns = []
+      @skip_link_patterns = convert_patterns(options[:skip_urls])
       @after_crawl_blocks = []
       @focus_crawl_block = nil
 
@@ -156,7 +156,7 @@ module Anemone
       self
     end
 
-    private
+    protected
 
     #
     # Execute the after_crawl blocks
@@ -195,6 +195,14 @@ module Anemone
         [] # depth limit reached; don't follow any links
       end
     end
+    
+    def in_domain?(link, page)
+      if options[:traverse_up]
+        page.same_host?(link)
+      else
+        matches_patterns?(url_patterns, link)
+      end
+    end
 
     #
     # Returns +true+ if *link* has not been visited already,
@@ -205,23 +213,52 @@ module Anemone
     def visit_link?(link)
       not @pages.has_key?(link) and not skip_link?(link)
     end
-    
-    def in_domain?(link, page)
-      if options[:traverse_up]
-        page.same_host?(link)
-      else
-        @url_strings ||= @urls.map { |u| u.to_s }
-        @url_strings.any? { |url| link.to_s.index(url) == 0 }
-      end
-    end
 
     #
     # Returns +true+ if *link* should not be visited because
     # its URL matches a skip_link pattern or is disallowed by robots.txt.
     #
     def skip_link?(link)
-      @skip_link_patterns.any? { |p| link.path_with_query =~ p } or
+      matches_patterns?(@skip_link_patterns, link) or
         not options[:http].allowed?(link)
+    end
+    
+    private
+    
+    def url_patterns
+      @url_patterns ||= begin
+        patterns = @urls.map { |u| u.to_s }
+        patterns.concat convert_patterns(options[:allowed_urls])
+      end
+    end
+    
+    def matches_patterns?(patterns, link)
+      link = link.to_s
+      
+      patterns.any? do |pattern|
+        if String === pattern
+          link.index(pattern) == 0
+        else
+          pattern.match(link)
+        end
+      end
+    end
+    
+    def convert_patterns(patterns)
+      Array(patterns).map do |pattern|
+        case pattern
+        when URI
+          pattern.to_s
+        when String
+          if pattern.index('*')
+            Regexp.new Regexp.escape(pattern).gsub('\*', '.*?')
+          else
+            pattern
+          end
+        else
+          pattern
+        end
+      end
     end
 
   end

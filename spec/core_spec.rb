@@ -48,6 +48,17 @@ module Anemone
       Anemone.crawl([pages[0].url, pages[2].url]).should have(4).pages
     end
     
+    it "should leave original domain if allowed by pattern" do
+      pages = []
+      pages << FakePage.new('0', :hrefs => ['http://www.other.com/', 'http://www.other.com/fun/games/wwp'])
+      pages << FakePage.new('http://www.other.com/fun/games/wwp', :hrefs => 'http://www.other.com/fun')
+      
+      core = Anemone.crawl(pages[0].url, :allowed_urls => ['http://www.other.com/fun/games'], :traverse_up => false)
+      
+      core.should have(2).pages
+      core.pages.keys.should include('http://www.other.com/fun/games/wwp')
+    end
+    
     it "should stay under given paths with :traverse_up set to false" do
       pages = []
       pages << FakePage.new('0', :links => ['01'])
@@ -70,15 +81,13 @@ module Anemone
       core.pages.keys.should_not include(pages[2].url)
     end
     
-    it "should be able to skip links based on a RegEx" do
+    it "should be able to skip links based on a regex" do
       pages = []
       pages << FakePage.new('0', :links => ['1', '2'])
       pages << FakePage.new('1')
       pages << FakePage.new('2')
       
-      core = Anemone.crawl(pages[0].url) do |a|
-        a.skip_links_like /1/
-      end
+      core = Anemone.crawl(pages[0].url, :skip_urls => %r{/1})
       
       core.should have(2).pages
       core.pages.keys.should_not include(pages[1].url)
@@ -200,7 +209,7 @@ module Anemone
     end
     
     it "should skip links and remove duplicates" do
-      @core.skip_links_like %r{^/will/skip}
+      @core.skip_links_like %r{/will/skip}
       @core.pages[SPEC_DOMAIN + 'bar'] = nil # mark as "visited"
       
       links = %[

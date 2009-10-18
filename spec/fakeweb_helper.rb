@@ -9,7 +9,7 @@ FakeWeb.allow_net_connect = false
 
 module Anemone
   class FakePage
-    attr_reader :name, :links, :hrefs, :redirect, :content_type
+    attr_reader :name, :url, :links, :hrefs, :redirect, :content_type
     
     def initialize(name = '', options = {})
       @name = name
@@ -19,11 +19,9 @@ module Anemone
       @content_type = options[:content_type] || "text/html"
       @body = options[:body]
       
+      @url = @name.index('//') ? @name : SPEC_DOMAIN + @name
+      
       add_to_fakeweb
-    end
-    
-    def url
-      SPEC_DOMAIN + @name
     end
     
     def body
@@ -48,7 +46,7 @@ module Anemone
       
       options = {:response => response_body}
       
-      FakeWeb.register_uri(:get, SPEC_DOMAIN + name, options)
+      FakeWeb.register_uri(:get, url, options)
     end
   end
 end
