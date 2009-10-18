@@ -21,7 +21,9 @@ module Anemone
     # by default, don't limit the depth of the crawl
     :depth_limit => false,
     # number of times HTTP redirects will be followed
-    :redirect_limit => 5
+    :redirect_limit => 5,
+    # whether crawling is allowed to paths above ones given
+    :traverse_up => true
   }
 
   #
