@@ -1,4 +1,4 @@
-require 'net/http'
+require 'net/https'
 
 module Anemone
   class HTTP
@@ -62,6 +62,12 @@ module Anemone
     
     def get_connection(url)
       connection = Net::HTTP.new(url.host, url.port)
+      
+      if url.scheme == 'https'
+        connection.use_ssl = true
+        connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
+      
       yield connection
     end
   end
